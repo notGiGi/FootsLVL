@@ -1,0 +1,23 @@
+﻿# Entornos y cachés
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE / SO
+.vscode/
+.DS_Store
+.idea/
+
+# Builds / binarios pesados
+build/
+dist/
+*.dll
+*.exe
+*.log
+
+# Datos (elige 1):
+#  - Si NO quieres versionar sesiones:
+# sessions/*.csv
+#  - Si SÍ las quieres versionar, usa Git LFS (ver paso 5)
