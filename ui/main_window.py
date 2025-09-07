@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QFileDialog, QComboBox, QMessageBox, QSlider, QCheckBox
 )
 from PySide6.QtCore import QObject, Signal, QTimer, Qt
-
+from core.ble_nurvv import NurvvBleSource
 from ui.heatmap_view import HeatmapView
 from ui.charts import RollingGRF
 from core.simulator import SimulatorSource
@@ -75,13 +75,14 @@ class MainWindow(QMainWindow):
 
         # Fuente
         self.cmb_source = QComboBox()
-        self.cmb_source.addItems(["Simulator", "Replay (CSV)"])  # BLE se activará luego
+        self.cmb_source.addItems(["Simulator", "NURVV BLE", "Replay (CSV)"])  # BLE se activará luego
         sideLay.addWidget(QLabel("Source:"))
         sideLay.addWidget(self.cmb_source)
 
         # Botones
         self.btn_start = QPushButton("Start")
         self.btn_stop  = QPushButton("Stop")
+        self.btn_stop.clicked.connect(self.on_stop)
         self.btn_zero  = QPushButton("Calibrate Zero (2s)")
         self.btn_export= QPushButton("Export PDF")
         for b in (self.btn_start, self.btn_stop, self.btn_zero, self.btn_export):
@@ -178,19 +179,36 @@ class MainWindow(QMainWindow):
     def on_start(self):
         src = self.cmb_source.currentText()
         if src == "Simulator":
-            self.source = SimulatorSource(n_sensors=self.n, freq=100, base_amp=60.0)
+            self.source = SimulatorSource(n_sensors=self.n, freq=100, base_amp=40.0)
             self._start_source(self.source)
             self.writer = SessionWriter(); self.writer.open(self.n)
             self.session_active = True; self.t0_ms = None
+            
+        elif src == "NURVV BLE":
+            # Crear fuente BLE con configuración
+            self.source = NurvvBleSource(
+                n_sensors=self.n, 
+                freq=100,
+                auto_connect=True,
+                sync_window_ms=50.0
+            )
+            self._start_source(self.source)
+            self.writer = SessionWriter(); self.writer.open(self.n)
+            self.session_active = True; self.t0_ms = None
+            
+            # Mostrar estado de conexión
+            QMessageBox.information(self, "NURVV BLE", 
+                "Buscando dispositivos NURVV...\n"
+                "Asegúrese de que los sensores estén encendidos y en modo emparejamiento.\n"
+                "Si no se encuentran dispositivos, se usará el simulador.")
+            
         elif src == "Replay (CSV)":
             path, _ = QFileDialog.getOpenFileName(self, "Open session CSV", "sessions", "CSV Files (*.csv)")
             if not path: return
             self.source = ReplaySource(path=path, n_sensors=self.n)
             self._start_source(self.source)
             self.writer = None; self.session_active = False; self.t0_ms = None
-        else:
-            QMessageBox.information(self, "Info", "BLE se activará cuando integremos el driver.")
-            return
+
 
     def _start_source(self, source):
         def on_sample(sample):
@@ -278,3 +296,13 @@ class MainWindow(QMainWindow):
         cR = cadence_from_steps(self.stateR.step_times)
         self.lbl_cadL.setText(f"Cadence L: {cL:.1f} spm")
         self.lbl_cadR.setText(f"Cadence R: {cR:.1f} spm")
+
+    def show_ble_status(self):
+        """Muestra el estado de la conexión BLE"""
+        if isinstance(self.source, NurvvBleSource):
+            status = self.source.get_status()
+            msg = f"Estado BLE:\n"
+            msg += f"• Pie izquierdo: {'✓ Conectado' if status['connected_left'] else '✗ Desconectado'}\n"
+            msg += f"• Pie derecho: {'✓ Conectado' if status['connected_right'] else '✗ Desconectado'}\n"
+            msg += f"• Frecuencia: {status['frequency']} Hz"
+            QMessageBox.information(self, "Estado NURVV BLE", msg)

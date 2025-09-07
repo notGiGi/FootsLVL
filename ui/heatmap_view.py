@@ -2,6 +2,8 @@
 import os
 import numpy as np
 import pyqtgraph as pg
+from core.better_foot_shape import foot_outline_anatomical, foot_sensors_anatomical
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QGridLayout
 from PySide6.QtCore import QRectF
 from core.interpolation import foot_layout_24, precompute_mapping, interpolate_to_grid
