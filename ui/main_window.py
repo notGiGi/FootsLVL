@@ -18,7 +18,7 @@ from core.processing import (
 from core.interpolation import foot_layout_24
 from core.calibration import init_calibration, apply_calibration
 from reports.report import export_pdf
-
+from core.dataset_heatmap_bridge import connect_dataset_to_ui
 DARK_QSS = """
 QWidget { background-color: #15171a; color: #dfe3ea; font-size: 12.5px; }
 QLabel#appTitle { font-size: 18px; font-weight: 700; color: #f1f3f7; }
@@ -127,6 +127,7 @@ class MainWindow(QMainWindow):
         mainCol.addWidget(header)
 
         self.heatmap = HeatmapView(grid_w=64, grid_h=96, n_sensors=self.n, title="Heatmap (Left / Right)")
+        self.dataset_bridge = connect_dataset_to_ui(self.heatmap, "MUN104")
         mainCol.addWidget(self.heatmap, 3)
 
         self.chart = RollingGRF()

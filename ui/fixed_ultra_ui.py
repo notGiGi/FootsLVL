@@ -19,7 +19,7 @@ from PySide6.QtGui import (
 
 import pyqtgraph as pg
 pg.setConfigOptions(imageAxisOrder='row-major')
-
+from ui.dataset_integration import DatasetControlWidget
 from scipy.interpolate import griddata
 from scipy.ndimage import gaussian_filter
 import time
